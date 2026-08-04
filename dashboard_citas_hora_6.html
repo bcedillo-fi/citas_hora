@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Citas Primera Vez Terminadas · por hora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --terracota:#A55D49;
+    --rosa-profunda:#B9646B;
+    --rosa-claro:#F2DFE1;
+    --amarillo-solar:#FEF8D8;
+    --verde-botanico:#53713F;
+    --verde-salvia:#E9EDDB;
+    --teal-tec:#3A6069;
+    --teal-bruma:#DAE6E8;
+    --ink:#2B2420;
+    --ink-soft:#6b6055;
+    --white:#FFFCF6;
+    --radius:14px;
+    --shadow: 0 1px 2px rgba(43,36,32,.05), 0 10px 28px rgba(43,36,32,.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--white);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,.display{ font-family:'Fraunces', serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  .wrap{ max-width:1000px; margin:0 auto; padding:2.5rem 1.5rem 4rem; }
+
+  /* ---- credentials panel ---- */
+  #credPanel{
+    background:var(--teal-bruma);
+    border-radius:var(--radius);
+    padding:1.1rem 1.3rem;
+    margin-bottom:1.75rem;
+    display:flex;
+    flex-wrap:wrap;
+    gap:.7rem;
+    align-items:center;
+  }
+  #credPanel.hidden{ display:none; }
+  #credPanel input{
+    flex:1 1 220px;
+    padding:.55rem .7rem;
+    border:1px solid #b9c8ca;
+    border-radius:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.8rem;
+    background:var(--white);
+  }
+  #credPanel textarea{
+    flex:1 1 100%;
+    min-height:70px;
+    padding:.55rem .7rem;
+    border:1px solid #b9c8ca;
+    border-radius:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.72rem;
+    background:var(--white);
+    resize:vertical;
+  }
+  #credPanel .lbl{ font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--teal-tec); font-weight:600; width:100%; }
+  #credPanel button{
+    background:var(--teal-tec);
+    color:var(--white);
+    border:none;
+    padding:.6rem 1.1rem;
+    border-radius:8px;
+    font-weight:600;
+    font-size:.82rem;
+    cursor:pointer;
+  }
+  #credPanel button:hover{ opacity:.9; }
+  #toggleCred{
+    background:none;
+    border:1px solid var(--teal-tec);
+    color:var(--teal-tec);
+    padding:.4rem .8rem;
+    border-radius:8px;
+    font-size:.75rem;
+    cursor:pointer;
+    margin-bottom:1.25rem;
+  }
+
+  /* ---- header ---- */
+  header{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:1.2rem;
+    margin-bottom:1.75rem;
+    border-bottom:2px solid var(--rosa-claro);
+    padding-bottom:1.25rem;
+  }
+  .eyebrow{
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--rosa-profunda);
+    font-weight:600;
+    margin-bottom:.35rem;
+  }
+  #dayTitle{
+    font-size:2rem;
+    font-weight:600;
+    margin:0;
+    line-height:1.1;
+  }
+  #dayTitle .cap{ color:var(--terracota); }
+
+  .daynav{ display:flex; align-items:center; gap:.5rem; }
+  .daynav button{
+    width:34px; height:34px;
+    border-radius:50%;
+    border:1px solid var(--rosa-claro);
+    background:var(--white);
+    font-size:1rem;
+    cursor:pointer;
+    color:var(--terracota);
+  }
+  .daynav button:hover{ background:var(--rosa-claro); }
+  #datePick{
+    border:1px solid var(--rosa-claro);
+    border-radius:8px;
+    padding:.5rem .7rem;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:.85rem;
+    background:var(--white);
+  }
+
+  .filters{
+    display:flex;
+    gap:.8rem;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:1.75rem;
+  }
+  .filters label{
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-soft);
+    font-weight:600;
+    margin-right:.5rem;
+  }
+  select{
+    padding:.55rem .8rem;
+    border-radius:8px;
+    border:1px solid #ddd0c8;
+    background:var(--white);
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:.88rem;
+    min-width:220px;
+  }
+
+  .kpirow{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:1rem;
+    margin-bottom:1.75rem;
+  }
+  .kpi{
+    background:var(--verde-salvia);
+    border-radius:var(--radius);
+    padding:1rem 1.15rem;
+  }
+  .kpi .num{ font-family:'Fraunces',serif; font-size:1.9rem; font-weight:600; color:var(--verde-botanico); }
+  .kpi .lbl{ font-size:.72rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; }
+
+  .card{
+    background:var(--white);
+    border:1px solid var(--rosa-claro);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:1.5rem;
+  }
+  .card-title{ font-size:.95rem; font-weight:600; margin-bottom:1rem; color:var(--ink); }
+  #chartWrap{ position:relative; height:340px; }
+
+  .empty, .loading{
+    display:flex; align-items:center; justify-content:center;
+    height:340px; color:var(--ink-soft); font-size:.88rem; text-align:center; flex-direction:column; gap:.5rem;
+  }
+  .status{ font-size:.78rem; color:var(--rosa-profunda); margin-top:.6rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <button id="toggleCred">⚙ Credenciales BigQuery</button>
+  <div id="credPanel" class="hidden">
+    <div class="lbl">Service Account (dashboard-lab-fi)</div>
+    <input id="clientEmail" placeholder="client_email (ej. dashboard-lab-fi@curious-song-415720.iam.gserviceaccount.com)">
+    <textarea id="privateKey" placeholder="private_key (bloque -----BEGIN PRIVATE KEY----- ... -----END PRIVATE KEY-----)"></textarea>
+    <button id="connectBtn">Conectar</button>
+    <div class="status" id="credStatus"></div>
+  </div>
+
+  <header>
+    <div>
+      <div class="eyebrow">Fertilidad Integral · vRepro → BigQuery</div>
+      <h1 id="dayTitle">Citas <span class="cap">Primera Vez Terminadas</span></h1>
+    </div>
+    <div class="daynav">
+      <button id="prevDay">‹</button>
+      <input type="month" id="datePick">
+      <button id="nextDay">›</button>
+    </div>
+  </header>
+
+  <div class="filters">
+    <div>
+      <label>Sede</label>
+      <select id="sedeSelect">
+        <option value="">Conecta BigQuery para cargar sedes…</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="kpirow">
+    <div class="kpi"><div class="num" id="kTotal">—</div><div class="lbl">Total del mes</div></div>
+    <div class="kpi"><div class="num" id="kPico">—</div><div class="lbl">Hora pico</div></div>
+    <div class="kpi"><div class="num" id="kProm">—</div><div class="lbl">Promedio / hora activa</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Distribución por hora <span id="chartSubtitle" class="mono" style="color:var(--ink-soft);font-weight:400;"></span></div>
+    <div id="chartWrap">
+      <div class="empty" id="emptyState">📊<br>Conecta BigQuery y elige sede + mes para ver la gráfica por hora</div>
+      <canvas id="hourChart" style="display:none;"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const PROJECT_ID = 'curious-song-415720';
+const DATASET = 'Informacion_FI';
+const TABLE = 'Citas';
+
+let creds = {
+  clientEmail: 'dashboard-lab-fi@curious-song-415720.iam.gserviceaccount.com',
+  privateKeyPem: `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC/ObED2hvC/XPe
+LTItxFNvVK44vDJPg53mH4h4s/7V/DqzPH+Tiv6OCBOuSDR6cjgVPLDXa1N3kKfS
+vDL7IYsyvzOVvM9EgCn+OOcWftVMGpJBcaGclBX6I6YKe5jOUT8ICvE63hTK6Vqj
+Gf3RrOFZqLjAgnaMugFzXFnM7S7/M7En0z7wijOIQRehxnApl1hXJ2/ViZ9Ga3pN
+P6ZvEAXtWcq9SNGnco599Nq9SMlJYOteO3Kk5y/wp3pqL75pPaVdPF+GGkij14+S
+HTInzSny8iCcm1Md5KMe0W62nXsxos5qff6oyktsFfeVgg3IxBNRkxWGaSa4JA1l
+fvkbSVcfAgMBAAECggEAROlj9sjnf0X6NwNflWmuTa0dGdoMYWZDhVYwxprLB89d
+UhFHwmJxKLsVaJWhv8yglFqqOf919V0edY2X67NjZ/bKfrgrk3qCZ5iXAp7TfBkJ
+QudRv80H/HxTTmzLHPLffaT/2OCGardcj/GCbEjabwakCdAaK82uTyXlQLnq2VFl
+1CM143ySuaufOvl6jCanOtjY2ullYUsyKBEJtoPX+ZkNRTEWRHhgUl783IK1MTm/
+oTN6pGI7f3NkiCEZF6pnZyIk38sl4DaEGbpuhbdNwx7EPH3Kr8y5hEwwW/6/me48
+jqw1HZsnHZIARMjYcp1gBUK1lnWAVDQpVYVeae2ikQKBgQD0LP7qBBZGmqS6DpY1
+GVsVa4qCaEsBTb9RzOhEmunXJwk7w3nobIHSemnIFfojnA8257Cig3bSVA1LMmSh
+fij2jhns5IpvHvjy1UWp26w5yxq2e0EiO2VxcQjba6R70qoPEUxuJ+Ol7fC133GK
++uFL1YoVQ8W8OXchunyf7nIjUQKBgQDIfEddYxibREo1j2iZ011NHsj6BlZ83D1o
+L3ztRvs56Ephp0+boVVZIkv3+k3MrC0eN+kwKJVeCFCVwNGLM3uUqf4m4ssV1MB5
+q2PeH08+jXSOIXBP8bHWeywJQv5g1kyXKuw0j2a01WKlwYVBIO22+X+7dIwoKoug
+e9sB4zPXbwKBgQCfrslqaw/STpHJp35t7U4WvQSQ8fmTObATo8iGDTU94iZ0sgqI
+iGWCK1IAavbx0L5WbsCiFw1e0V78PVF4F1RcoWOs+2zY7M1rqTPsuF9yUDQBAKwA
+4g0eWgirzkJ8Q7G5Ntvf8jA7NFdF6YGMnTM3b8fkzjSDOqWBJj8YLEzycQKBgAWB
+pFQkTKC3F3KxJaZT79QWbF6xnd6ADg+2fi/mKzBD+QcFmWIk5Ds2fe+pqEle0T5r
+OrRf6PpUMCJs0VSJbXN/18Mpp3pKBZ9R3cRUB9EoAXOF55fKg5/ociUu+d2fBSuB
+uksXRTLiSXtT/Vz0kpLb924mnVLdGEioHjPHEb1xAoGBANENhWPneL+5+W/8dgVv
+CKGUtnWCXxmS4OAwDiAhcinSqS2Zw1ovwdut58kNEAsLHhb1ykPW1P1ZG64ckScK
+e2WXRxLBc1eexuF41oq6Nb7lUqJjDki+zsnBvonsvmko6Q3OLq3NwNmifea6mR7e
+JggFAWHhmz5eNUuVLiop3GYu
+-----END PRIVATE KEY-----`
+};
+let cachedToken = null;
+let tokenExpiry = 0;
+let chart = null;
+
+// ---------- UI wiring ----------
+document.getElementById('toggleCred').addEventListener('click', () => {
+  document.getElementById('credPanel').classList.toggle('hidden');
+});
+
+const datePick = document.getElementById('datePick');
+const todayStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Mexico_City' }); // YYYY-MM-DD
+datePick.value = todayStr.slice(0,7); // YYYY-MM
+updateDayTitle();
+
+document.getElementById('clientEmail').value = creds.clientEmail;
+document.getElementById('privateKey').value = creds.privateKeyPem;
+
+// autoconectar al cargar la página
+(async () => {
+  const status = document.getElementById('credStatus');
+  status.textContent = 'Conectando…';
+  try{
+    await getAccessToken();
+    status.textContent = '✓ Conectado';
+    await loadSedes();
+    runQuery();
+  }catch(e){
+    status.textContent = 'Error: ' + e.message;
+    document.getElementById('credPanel').classList.remove('hidden');
+  }
+})();
+
+document.getElementById('prevDay').addEventListener('click', () => shiftDay(-1));
+document.getElementById('nextDay').addEventListener('click', () => shiftDay(1));
+datePick.addEventListener('change', () => { updateDayTitle(); runQuery(); });
+document.getElementById('sedeSelect').addEventListener('change', runQuery);
+
+function shiftDay(delta){
+  const [y,m] = datePick.value.split('-').map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  datePick.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  updateDayTitle();
+  runQuery();
+}
+
+function updateDayTitle(){
+  const [y,m] = datePick.value.split('-').map(Number);
+  const d = new Date(y, m-1, 1);
+  const fmt = d.toLocaleDateString('es-MX', { month:'long', year:'numeric' });
+  document.getElementById('chartSubtitle').textContent = fmt;
+}
+
+// ---------- JWT / auth (client-side, mismo patrón que dashboards previos) ----------
+function pemToArrayBuffer(pem){
+  const b64 = pem.replace(/-----BEGIN PRIVATE KEY-----/, '')
+                 .replace(/-----END PRIVATE KEY-----/, '')
+                 .replace(/\s/g, '');
+  const raw = atob(b64);
+  const buf = new ArrayBuffer(raw.length);
+  const view = new Uint8Array(buf);
+  for (let i=0;i<raw.length;i++) view[i] = raw.charCodeAt(i);
+  return buf;
+}
+
+function base64url(input){
+  let str = typeof input === 'string' ? btoa(input) : btoa(String.fromCharCode(...new Uint8Array(input)));
+  return str.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+async function importPrivateKey(pem){
+  const keyBuf = pemToArrayBuffer(pem);
+  return crypto.subtle.importKey('pkcs8', keyBuf, { name:'RSASSA-PKCS1-v1_5', hash:'SHA-256' }, false, ['sign']);
+}
+
+async function getAccessToken(){
+  if (cachedToken && Date.now() < tokenExpiry - 30000) return cachedToken;
+  const header = { alg:'RS256', typ:'JWT' };
+  const now = Math.floor(Date.now()/1000);
+  const claim = {
+    iss: creds.clientEmail,
+    scope: 'https://www.googleapis.com/auth/bigquery.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now
+  };
+  const unsigned = base64url(JSON.stringify(header)) + '.' + base64url(JSON.stringify(claim));
+  const key = await importPrivateKey(creds.privateKeyPem);
+  const sigBuf = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(unsigned));
+  const jwt = unsigned + '.' + base64url(sigBuf);
+
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+    body: 'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=' + encodeURIComponent(jwt)
+  });
+  const data = await resp.json();
+  if (!data.access_token) throw new Error('No se pudo obtener access_token: ' + JSON.stringify(data));
+  cachedToken = data.access_token;
+  tokenExpiry = Date.now() + (data.expires_in*1000);
+  return cachedToken;
+}
+
+async function runBQ(sql, params={}){
+  const token = await getAccessToken();
+  const body = {
+    query: sql,
+    useLegacySql: false,
+    parameterMode: 'NAMED',
+    queryParameters: Object.entries(params).map(([name,value]) => ({
+      name,
+      parameterType: { type: 'STRING' },
+      parameterValue: { value: String(value) }
+    }))
+  };
+  const resp = await fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${PROJECT_ID}/queries`, {
+    method:'POST',
+    headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message);
+  const fields = (data.schema?.fields || []).map(f=>f.name);
+  const rows = (data.rows || []).map(r => {
+    const obj = {};
+    r.f.forEach((cell,i) => obj[fields[i]] = cell.v);
+    return obj;
+  });
+  return rows;
+}
+
+// ---------- connect ----------
+document.getElementById('connectBtn').addEventListener('click', async () => {
+  const clientEmail = document.getElementById('clientEmail').value.trim();
+  const privateKeyPem = document.getElementById('privateKey').value.trim();
+  const status = document.getElementById('credStatus');
+  if (!clientEmail || !privateKeyPem){
+    status.textContent = 'Falta client_email o private_key.';
+    return;
+  }
+  creds = { clientEmail, privateKeyPem };
+  status.textContent = 'Conectando…';
+  try{
+    await getAccessToken();
+    status.textContent = '✓ Conectado. Cargando sedes…';
+    await loadSedes();
+    status.textContent = '✓ Conectado';
+    document.getElementById('credPanel').classList.add('hidden');
+    runQuery();
+  }catch(e){
+    status.textContent = 'Error: ' + e.message;
+  }
+});
+
+async function loadSedes(){
+  const rows = await runBQ(`
+    SELECT DISTINCT delegaciones_name_comer AS sede
+    FROM \`${PROJECT_ID}.${DATASET}.${TABLE}\`
+    WHERE delegaciones_name_comer IS NOT NULL AND delegaciones_name_comer != ''
+    ORDER BY sede
+  `);
+  const sel = document.getElementById('sedeSelect');
+  sel.innerHTML = '';
+  rows.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r.sede;
+    opt.textContent = r.sede;
+    sel.appendChild(opt);
+  });
+  if (rows.length) sel.value = rows[0].sede;
+}
+
+// ---------- main query ----------
+async function runQuery(){
+  if (!creds) return;
+  const sede = document.getElementById('sedeSelect').value;
+  const mes = datePick.value; // YYYY-MM
+  if (!sede || !mes) return;
+
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('emptyState').innerHTML = '⏳<br>Consultando BigQuery…';
+  document.getElementById('hourChart').style.display = 'none';
+
+  try{
+    const rows = await runBQ(`
+      SELECT
+        EXTRACT(HOUR FROM PARSE_TIME('%H:%M:%S', hora)) AS hora_num,
+        COUNT(*) AS citas
+      FROM \`${PROJECT_ID}.${DATASET}.${TABLE}\`
+      WHERE citas_concep_cit_con_grp_name = 'Primera Vez'
+        AND estados_citas_name = 'Terminada'
+        AND delegaciones_name_comer = @sede
+        AND FORMAT_DATE('%Y-%m', DATE(fecha)) = @mes
+      GROUP BY hora_num
+      ORDER BY hora_num
+    `, { sede, mes });
+
+    renderChart(rows);
+  }catch(e){
+    document.getElementById('emptyState').innerHTML = '⚠️ Error al consultar:<br>' + e.message;
+  }
+}
+
+function renderChart(rows){
+  const byHour = {};
+  rows.forEach(r => byHour[r.hora_num] = parseInt(r.citas,10));
+
+  const hours = [];
+  for (let h=7; h<=20; h++) hours.push(h); // horario clínico típico
+  const counts = hours.map(h => byHour[h] || 0);
+  const total = counts.reduce((a,b)=>a+b,0);
+
+  document.getElementById('kTotal').textContent = total;
+  if (total === 0){
+    document.getElementById('emptyState').style.display = 'flex';
+    document.getElementById('emptyState').innerHTML = '📭<br>Sin citas Primera Vez Terminadas para esta sede/mes';
+    document.getElementById('hourChart').style.display = 'none';
+    document.getElementById('kPico').textContent = '—';
+    document.getElementById('kProm').textContent = '—';
+    return;
+  }
+
+  const maxIdx = counts.indexOf(Math.max(...counts));
+  document.getElementById('kPico').textContent = `${hours[maxIdx]}:00`;
+  const activeHours = counts.filter(c => c>0).length;
+  document.getElementById('kProm').textContent = (total/activeHours).toFixed(1);
+
+  document.getElementById('emptyState').style.display = 'none';
+  const canvas = document.getElementById('hourChart');
+  canvas.style.display = 'block';
+
+  if (chart) chart.destroy();
+  chart = new Chart(canvas, {
+    type: 'bar',
+    data:{
+      labels: hours.map(h => h.toString().padStart(2,'0') + ':00'),
+      datasets:[{
+        label: 'Citas Primera Vez Terminadas',
+        data: counts,
+        backgroundColor: '#A55D49',
+        borderRadius: 6,
+        maxBarThickness: 36
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        y:{ beginAtZero:true, ticks:{ precision:0, color:'#6b6055' }, grid:{ color:'#F2DFE1' } },
+        x:{ ticks:{ color:'#6b6055' }, grid:{ display:false } }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
